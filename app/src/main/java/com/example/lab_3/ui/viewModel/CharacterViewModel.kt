@@ -15,10 +15,11 @@ class CharacterViewModel : ViewModel() {
 
     fun fetchCharacters() {
         val pageNumber: Int = (0..42).random()
+
         viewModelScope.launch {
             try {
                 Log.d("CharacterViewModel", "Loading characters...")
-                val response = RickAndMortyApi.retrofitService.getCharacters(pageNumber)
+                val response = RickAndMortyApi.create().getCharacters(pageNumber)
                 _characters.value = response.results
                 Log.d("CharacterViewModel", "Characters loaded: ${response.results.size}")
             } catch (e: Exception) {
