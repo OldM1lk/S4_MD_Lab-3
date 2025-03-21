@@ -1,5 +1,6 @@
 package com.example.lab_3.ui
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
@@ -16,12 +17,12 @@ import com.example.lab_3.ui.screens.HomeScreen
 import com.example.lab_3.ui.screens.RickAndMortyViewModel
 
 @Composable
+@SuppressLint("StateFlowValueCalledInComposition")
 fun RickAndMortyApp(viewModel: RickAndMortyViewModel = viewModel()) {
     Scaffold(
         topBar = { AppTopBar(viewModel) }
     ) {
         HomeScreen(
-            rickAndMortyUiState = viewModel.rickAndMortyUiState,
             modifier = Modifier.padding(it)
         )
     }

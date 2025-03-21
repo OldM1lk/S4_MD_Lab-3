@@ -21,7 +21,8 @@ sealed interface RickAndMortyUiState {
 }
 
 class RickAndMortyViewModel : ViewModel() {
-    var rickAndMortyUiState: RickAndMortyUiState by mutableStateOf(RickAndMortyUiState.Loading)
+    private val _rickAndMortyUiState = MutableStateFlow<RickAndMortyUiState>(RickAndMortyUiState.Loading)
+    var rickAndMortyUiState: StateFlow<RickAndMortyUiState> = _rickAndMortyUiState
     private val _characters = MutableStateFlow<List<Character>>(emptyList())
     val characters: StateFlow<List<Character>> = _characters
 
@@ -33,18 +34,22 @@ class RickAndMortyViewModel : ViewModel() {
         val pageNumber: Int = (0..42).random()
 
         viewModelScope.launch(Dispatchers.IO) {
-            rickAndMortyUiState = RickAndMortyUiState.Loading
+            _rickAndMortyUiState.value = RickAndMortyUiState.Loading
             try {
                 Log.d("CharacterViewModel", "Loading characters...")
                 val response = RickAndMortyApi.create().getCharacters(pageNumber)
                 _characters.value = response.results
-                rickAndMortyUiState = RickAndMortyUiState.Success
+                _rickAndMortyUiState.value = RickAndMortyUiState.Success
                 Log.d("CharacterViewModel", "Characters loaded: ${response.results.size}")
             } catch (e: IOException) {
                 Log.e("CharacterViewModel", "Error loading characters: ", e)
-                rickAndMortyUiState = RickAndMortyUiState.Error
+                _rickAndMortyUiState.value = RickAndMortyUiState.Error
             }
         }
+    }
+
+    fun clearForTest() {
+        onCleared()
     }
 }
 

@@ -1,5 +1,6 @@
 package com.example.lab_3.ui.screens
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -32,11 +33,12 @@ import com.example.lab_3.R
 import com.example.lab_3.data.model.Character
 
 @Composable
+@SuppressLint("ModifierParameter")
 fun HomeScreen(
     viewModel: RickAndMortyViewModel = viewModel(),
-    rickAndMortyUiState: RickAndMortyUiState,
     modifier: Modifier = Modifier,
 ) {
+    val rickAndMortyUiState by viewModel.rickAndMortyUiState.collectAsState()
     val characters by viewModel.characters.collectAsState()
 
     when (rickAndMortyUiState) {
@@ -77,14 +79,9 @@ fun ResultScreen(
 ) {
     LazyColumn(modifier = modifier) {
         items(characters) {
-            CharacterItem(it)
+            CharacterCard(it)
         }
     }
-}
-
-@Composable
-fun CharacterItem(character: Character) {
-    CharacterCard(character)
 }
 
 @Composable
@@ -108,7 +105,7 @@ fun CharacterCard(character: Character) {
                 model = character.image,
                 contentDescription = character.name,
                 modifier = Modifier
-                    .size(72.dp)
+                    .size(64.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
             Column {
