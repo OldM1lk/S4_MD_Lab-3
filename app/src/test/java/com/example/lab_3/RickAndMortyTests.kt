@@ -7,10 +7,8 @@ import com.example.lab_3.ui.screens.RickAndMortyUiState
 import com.example.lab_3.ui.screens.RickAndMortyViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -61,7 +59,10 @@ class RickAndMortyViewModelTest {
             .build()
             .create(RickAndMortyApiService::class.java)
 
-        viewModel = RickAndMortyViewModel()
+        viewModel = RickAndMortyViewModel(
+            api = api,
+            dispatcher = UnconfinedTestDispatcher()
+        )
     }
 
     @Test
@@ -71,10 +72,10 @@ class RickAndMortyViewModelTest {
             .setBody("""{"results":[{"id":1,"name":"Rick Sanchez","species":"Human","status":"Alive","image":"https://rickandmortyapi.com/api/character/avatar/1.jpeg"}]}""")
         mockWebServer.enqueue(mockResponse)
 
-        viewModel.fetchCharacters()
         viewModel.characters.test {
+            viewModel.fetchCharacters()
             val result = awaitItem()
-            assert(result[0].name == "Rick Sanchez")
+            assert(result[0].id == 1)
         }
     }
 
@@ -88,10 +89,12 @@ class RickAndMortyViewModelTest {
         val mockResponse = MockResponse().setResponseCode(404)
         mockWebServer.enqueue(mockResponse)
 
-        viewModel.fetchCharacters()
-        viewModel.characters.test {
-            val result = awaitItem()
-            assert(result.isEmpty())
+        viewModel.rickAndMortyUiState.test {
+            viewModel.fetchCharacters()
+            val loadingState = awaitItem()
+            assert(loadingState == RickAndMortyUiState.Loading)
+            val errorState = awaitItem()
+            assert(errorState == RickAndMortyUiState.Error)
         }
     }
 
@@ -102,23 +105,19 @@ class RickAndMortyViewModelTest {
             .setBody("""{"results":[{"id":1,"name":"Rick Sanchez","species":"Human","status":"Alive","image":"https://rickandmortyapi.com/api/character/avatar/1.jpeg"}]}""")
         mockWebServer.enqueue(mockResponse)
 
-        val states = mutableListOf<RickAndMortyUiState>()
-        launch {
-            viewModel.rickAndMortyUiState.toList(states)
+        viewModel.rickAndMortyUiState.test {
+            viewModel.fetchCharacters()
+            val loadingState = awaitItem()
+            assert(loadingState == RickAndMortyUiState.Loading)
+            val successState = awaitItem()
+            assert(successState == RickAndMortyUiState.Success)
         }
-
-        viewModel.fetchCharacters()
-        assert(
-            states[0] == RickAndMortyUiState.Loading &&
-            states[1] == RickAndMortyUiState.Success
-        )
     }
 
     @Test
     fun coroutineCancelWhenViewModelDestroys_ReturnsTrue() = runTest {
         viewModel.fetchCharacters()
         viewModel.clearForTest()
-
         assert(!viewModel.viewModelScope.isActive)
     }
 }

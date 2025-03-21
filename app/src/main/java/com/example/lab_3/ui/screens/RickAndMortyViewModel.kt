@@ -8,10 +8,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lab_3.data.model.Character
 import com.example.lab_3.data.remote.RickAndMortyApi
+import com.example.lab_3.data.remote.RickAndMortyApiService
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 import java.io.IOException
 
 sealed interface RickAndMortyUiState {
@@ -20,7 +23,10 @@ sealed interface RickAndMortyUiState {
     data object Loading : RickAndMortyUiState
 }
 
-class RickAndMortyViewModel : ViewModel() {
+class RickAndMortyViewModel(
+    private val api: RickAndMortyApiService = RickAndMortyApi.create(),
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+) : ViewModel() {
     private val _rickAndMortyUiState = MutableStateFlow<RickAndMortyUiState>(RickAndMortyUiState.Loading)
     var rickAndMortyUiState: StateFlow<RickAndMortyUiState> = _rickAndMortyUiState
     private val _characters = MutableStateFlow<List<Character>>(emptyList())
@@ -33,23 +39,26 @@ class RickAndMortyViewModel : ViewModel() {
     fun fetchCharacters() {
         val pageNumber: Int = (0..42).random()
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(dispatcher) {
             _rickAndMortyUiState.value = RickAndMortyUiState.Loading
             try {
-                Log.d("CharacterViewModel", "Loading characters...")
-                val response = RickAndMortyApi.create().getCharacters(pageNumber)
+                val response = api.getCharacters(pageNumber)
                 _characters.value = response.results
                 _rickAndMortyUiState.value = RickAndMortyUiState.Success
-                Log.d("CharacterViewModel", "Characters loaded: ${response.results.size}")
-            } catch (e: IOException) {
-                Log.e("CharacterViewModel", "Error loading characters: ", e)
+            } catch (e: HttpException) {
                 _rickAndMortyUiState.value = RickAndMortyUiState.Error
+                _characters.value = emptyList()
+            } catch (e: IOException) {
+                _rickAndMortyUiState.value = RickAndMortyUiState.Error
+                _characters.value = emptyList()
             }
         }
     }
 
     fun clearForTest() {
-        onCleared()
+        viewModelScope.launch {
+            onCleared()
+        }
     }
 }
 
