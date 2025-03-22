@@ -2,20 +2,14 @@ package com.example.lab_3
 
 import androidx.lifecycle.viewModelScope
 import app.cash.turbine.test
-import com.example.lab_3.data.model.Character
-import com.example.lab_3.data.model.CharacterResponse
-import com.example.lab_3.data.model.Location
-import com.example.lab_3.data.model.Origin
 import com.example.lab_3.data.remote.RickAndMortyApiService
 import com.example.lab_3.ui.screens.RickAndMortyUiState
 import com.example.lab_3.ui.screens.RickAndMortyViewModel
-import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -71,31 +65,25 @@ class RickAndMortyViewModelTest {
 
     @Test
     fun receiveDataFromApi_ReturnsTrue() = runTest {
-        val mockCharacter = Character(
-            id = 1,
-            name = "Rick Sanchez",
-            status = "Alive",
-            species = "Human",
-            type = "",
-            gender = "Male",
-            origin = Origin("", ""),
-            location = Location("", ""),
-            image = "",
-            episode = emptyList(),
-            url = "",
-            created = ""
-        )
-        val mockCharacterResponse = CharacterResponse(listOf(mockCharacter))
         val mockResponse = MockResponse()
             .setResponseCode(200)
-            .setBody(Gson().toJson(mockCharacterResponse))
+            .setBody("""{"info":{"count":1,"pages":1,"next":null,"prev":null},"results":[{"id":1,"name":"Rick Sanchez","status":"Alive","species":"Human","type":"","gender":"Male","origin":{"name":"Earth (C-137)","url":"https://rickandmortyapi.com/api/location/1"},"location":{"name":"Citadel of Ricks","url":"https://rickandmortyapi.com/api/location/3"},"image":"https://rickandmortyapi.com/api/character/avatar/1.jpeg","episode":["https://rickandmortyapi.com/api/episode/1"],"url":"https://rickandmortyapi.com/api/character/1","created":"2017-11-04T18:48:46.250Z"}]}""")
         mockWebServer.enqueue(mockResponse)
 
-        viewModel.fetchCharacters()
-        advanceUntilIdle()
+        viewModel.rickAndMortyUiState.test {
+            viewModel.fetchCharacters()
+
+            val loadingState = awaitItem()
+            assert(loadingState == RickAndMortyUiState.Loading)
+
+            val successState = awaitItem()
+            assert(successState == RickAndMortyUiState.Success)
+        }
+
         viewModel.characters.test {
-            val result = awaitItem()
-            assert(result[0].id == 1)
+            val characters = awaitItem()
+            println(characters)
+            assert(characters[0].id == 1)
         }
     }
 

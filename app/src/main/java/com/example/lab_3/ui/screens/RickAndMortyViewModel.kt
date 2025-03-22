@@ -3,7 +3,6 @@ package com.example.lab_3.ui.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lab_3.data.model.Character
-import com.example.lab_3.data.remote.RickAndMortyApi
 import com.example.lab_3.data.remote.RickAndMortyApiService
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -35,8 +34,6 @@ class RickAndMortyViewModel(
     }
 
     fun fetchCharacters(pageNumber: Int = 1) {
-        //val pageNumber: Int = (0..42).random()
-
         viewModelScope.launch(dispatcher) {
             _rickAndMortyUiState.value = RickAndMortyUiState.Loading
             try {
@@ -57,4 +54,3 @@ class RickAndMortyViewModel(
         viewModelScope.cancel()
     }
 }
-
