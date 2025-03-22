@@ -2,16 +2,20 @@ package com.example.lab_3
 
 import androidx.lifecycle.viewModelScope
 import app.cash.turbine.test
+import com.example.lab_3.data.model.Character
+import com.example.lab_3.data.model.CharacterResponse
+import com.example.lab_3.data.model.Location
+import com.example.lab_3.data.model.Origin
 import com.example.lab_3.data.remote.RickAndMortyApiService
 import com.example.lab_3.ui.screens.RickAndMortyUiState
 import com.example.lab_3.ui.screens.RickAndMortyViewModel
+import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -67,21 +71,32 @@ class RickAndMortyViewModelTest {
 
     @Test
     fun receiveDataFromApi_ReturnsTrue() = runTest {
+        val mockCharacter = Character(
+            id = 1,
+            name = "Rick Sanchez",
+            status = "Alive",
+            species = "Human",
+            type = "",
+            gender = "Male",
+            origin = Origin("", ""),
+            location = Location("", ""),
+            image = "",
+            episode = emptyList(),
+            url = "",
+            created = ""
+        )
+        val mockCharacterResponse = CharacterResponse(listOf(mockCharacter))
         val mockResponse = MockResponse()
             .setResponseCode(200)
-            .setBody("""{"results":[{"id":1,"name":"Rick Sanchez","species":"Human","status":"Alive","image":"https://rickandmortyapi.com/api/character/avatar/1.jpeg"}]}""")
+            .setBody(Gson().toJson(mockCharacterResponse))
         mockWebServer.enqueue(mockResponse)
 
+        viewModel.fetchCharacters()
+        advanceUntilIdle()
         viewModel.characters.test {
-            viewModel.fetchCharacters()
             val result = awaitItem()
             assert(result[0].id == 1)
         }
-    }
-
-    @After
-    fun shutdown() {
-        mockWebServer.shutdown()
     }
 
     @Test
@@ -119,5 +134,10 @@ class RickAndMortyViewModelTest {
         viewModel.fetchCharacters()
         viewModel.clearForTest()
         assert(!viewModel.viewModelScope.isActive)
+    }
+
+    @After
+    fun shutdown() {
+        mockWebServer.shutdown()
     }
 }

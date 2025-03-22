@@ -36,7 +36,8 @@ fun AppTopBar(viewModel: RickAndMortyViewModel) {
         actions = {
             IconButton(
                 onClick = {
-                    viewModel.fetchCharacters()
+                    val pageNumber: Int = (0..42).random()
+                    viewModel.fetchCharacters(pageNumber)
                 }
             ) {
                 Icon(Icons.Default.Refresh, contentDescription = "Обновить")
